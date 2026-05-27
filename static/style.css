@@ -48,7 +48,28 @@ body {
     height: 600px;
     border-radius: 50%;
     object-fit: cover;
+    transition: transform 0.3s ease, filter 0.3s ease;
 }
+
+.character-viewer #character-image.speaking {
+    animation: pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 5px rgba(65, 105, 225, 0.5));
+    }
+    50% {
+        transform: scale(1.02);
+        filter: drop-shadow(0 0 20px rgba(65, 105, 225, 0.9));
+    }
+    100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 5px rgba(65, 105, 225, 0.5));
+    }
+}
+
 
 .chat-header h1 {
     margin: 0;

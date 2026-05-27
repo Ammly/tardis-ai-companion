@@ -18,10 +18,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let voices = [];
     let lipSyncInterval;
+    let isSpeaking = false;
+    let isTyping = false;
+
+    function startLipSync() {
+        if (lipSyncInterval) return;
+        characterImage.classList.add('speaking');
+        let mouthOpen = true;
+        lipSyncInterval = setInterval(() => {
+            characterImage.src = mouthOpen ? openMouthImg : closedMouthImg;
+            mouthOpen = !mouthOpen;
+        }, 150);
+    }
+
+    function stopLipSync() {
+        if (isSpeaking || isTyping) return;
+        clearInterval(lipSyncInterval);
+        lipSyncInterval = null;
+        characterImage.classList.remove('speaking');
+        characterImage.src = closedMouthImg;
+    }
 
     function populateVoiceList() {
         const allVoices = speechSynthesis.getVoices();
         voices = allVoices.filter(voice => voice.name.includes('Google'));
+        if (voices.length === 0) {
+            voices = allVoices;
+        }
         voiceSelect.innerHTML = '';
 
         let usVoiceIndex = -1;
@@ -50,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
         speechSynthesis.onvoiceschanged = populateVoiceList;
     }
 
-    const typewriter = (text, element, speed = 50) => {
+    const typewriter = (text, element, speed = 50, callback = null) => {
         // Use Intl.Segmenter to handle grapheme clusters correctly
         if (window.Intl && Intl.Segmenter) {
             const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
@@ -64,6 +87,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     element.innerHTML += segments[i];
                     i++;
                     setTimeout(type, speed);
+                } else if (callback) {
+                    callback();
                 }
             }
             type();
@@ -76,6 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     element.innerHTML += text.charAt(i);
                     i++;
                     setTimeout(type, speed);
+                } else if (callback) {
+                    callback();
                 }
             }
             type();
@@ -86,31 +113,29 @@ document.addEventListener('DOMContentLoaded', () => {
         if (speechSynthesis.speaking) {
             speechSynthesis.cancel();
         }
-        clearInterval(lipSyncInterval);
-
         const utterance = new SpeechSynthesisUtterance(text);
-        const selectedOption = voiceSelect.selectedOptions[0].getAttribute('data-name');
-        const selectedVoice = voices.find(voice => voice.name === selectedOption);
+        
+        // Guard against voiceSelect being empty
+        const selectedOptionElement = voiceSelect.selectedOptions ? voiceSelect.selectedOptions[0] : null;
+        const selectedOption = selectedOptionElement ? selectedOptionElement.getAttribute('data-name') : null;
+        const selectedVoice = selectedOption ? voices.find(voice => voice.name === selectedOption) : null;
         if (selectedVoice) {
             utterance.voice = selectedVoice;
         }
 
         utterance.onstart = () => {
-            let mouthOpen = true;
-            lipSyncInterval = setInterval(() => {
-                characterImage.src = mouthOpen ? openMouthImg : closedMouthImg;
-                mouthOpen = !mouthOpen;
-            }, 150);
+            isSpeaking = true;
+            startLipSync();
         };
 
         utterance.onend = () => {
-            clearInterval(lipSyncInterval);
-            characterImage.src = closedMouthImg;
+            isSpeaking = false;
+            stopLipSync();
         };
 
         utterance.onerror = () => {
-            clearInterval(lipSyncInterval);
-            characterImage.src = closedMouthImg;
+            isSpeaking = false;
+            stopLipSync();
         };
 
         speechSynthesis.speak(utterance);
@@ -138,12 +163,22 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
-            typewriter(data.response, status);
+            isTyping = true;
+            startLipSync();
+            typewriter(data.response, status, 50, () => {
+                isTyping = false;
+                stopLipSync();
+            });
             speak(data.response);
         } catch (error) {
             console.error('Error:', error);
             const errorMessage = 'Sorry, something went wrong. Please try again.';
-            typewriter(errorMessage, status);
+            isTyping = true;
+            startLipSync();
+            typewriter(errorMessage, status, 50, () => {
+                isTyping = false;
+                stopLipSync();
+            });
             speak(errorMessage);
         }
     };

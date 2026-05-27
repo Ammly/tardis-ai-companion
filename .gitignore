@@ -24,3 +24,12 @@ env/
 .DS_Store
 *.log
 *.sqlite3'
+
+# Python virtual environment
+.venv/
+
+# Antigravity CLI metadata
+.antigravitycli/
+
+# Runtime agent configurations
+.agents/
