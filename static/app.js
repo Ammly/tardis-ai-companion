@@ -74,17 +74,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const typewriter = (text, element, speed = 50, callback = null) => {
+        element.classList.remove('empty');
+        
+        // Helper to parse markdown safely
+        const parseMarkdown = (rawText) => {
+            if (window.marked && typeof marked.parse === 'function') {
+                return marked.parse(rawText);
+            }
+            return rawText.replace(/\n/g, '<br>');
+        };
+
         // Use Intl.Segmenter to handle grapheme clusters correctly
         if (window.Intl && Intl.Segmenter) {
             const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
             const segments = Array.from(segmenter.segment(text)).map(s => s.segment);
             
             let i = 0;
+            let currentText = "";
             element.innerHTML = "";
 
             function type() {
                 if (i < segments.length) {
-                    element.innerHTML += segments[i];
+                    currentText += segments[i];
+                    element.innerHTML = parseMarkdown(currentText);
                     i++;
                     setTimeout(type, speed);
                 } else if (callback) {
@@ -95,10 +107,12 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             // Fallback for older browsers
             let i = 0;
+            let currentText = "";
             element.innerHTML = "";
             function type() {
                 if (i < text.length) {
-                    element.innerHTML += text.charAt(i);
+                    currentText += text.charAt(i);
+                    element.innerHTML = parseMarkdown(currentText);
                     i++;
                     setTimeout(type, speed);
                 } else if (callback) {
@@ -147,6 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         textInput.value = '';
         textInput.style.height = '50px';
+        status.classList.add('empty');
         status.textContent = "Thinking...";
 
         try {

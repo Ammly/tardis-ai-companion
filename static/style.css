@@ -81,14 +81,77 @@ body {
 }
 
 #status {
-    text-align: center;
     padding: 1.5rem;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     line-height: 1.6;
     flex-grow: 1;
+    overflow-y: auto;
+    display: block;
+}
+
+#status.empty {
     display: flex;
     align-items: center;
     justify-content: center;
+    text-align: center;
+}
+
+/* Markdown styling inside #status */
+#status h1, #status h2, #status h3, #status h4 {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+#status h1 { font-size: 1.4rem; }
+#status h2 { font-size: 1.25rem; }
+#status h3 { font-size: 1.1rem; }
+
+#status p {
+    margin-top: 0;
+    margin-bottom: 0.8rem;
+}
+
+#status ul, #status ol {
+    margin-top: 0;
+    margin-bottom: 0.8rem;
+    padding-left: 1.5rem;
+}
+
+#status li {
+    margin-bottom: 0.4rem;
+}
+
+#status code {
+    background-color: var(--input-background);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9em;
+}
+
+#status pre {
+    background-color: var(--input-background);
+    padding: 0.8rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin-top: 0;
+    margin-bottom: 0.8rem;
+    border: 1px solid var(--border-color);
+}
+
+#status pre code {
+    background-color: transparent;
+    padding: 0;
+    font-size: 0.85rem;
+}
+
+#status blockquote {
+    border-left: 4px solid var(--primary-accent);
+    margin: 0 0 0.8rem 0;
+    padding-left: 1rem;
+    color: #b0b0b0;
+    font-style: italic;
 }
 
 .chat-input-area {

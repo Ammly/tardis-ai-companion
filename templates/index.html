@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
     <div class="chat-container">
@@ -17,7 +18,7 @@
         <div class="character-viewer">
             <img id="character-image" src="/static/images/char-mouth-closed.png" alt="TARDIS">
         </div>
-        <p id="status">Ask me something!</p>
+        <div id="status" class="empty">Ask me something!</div>
         <footer class="chat-input-area">
             <select id="voice-select"></select>
             <textarea id="text-input" placeholder="Ask me anything..."></textarea>
