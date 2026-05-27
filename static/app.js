@@ -41,13 +41,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function populateVoiceList() {
         const allVoices = speechSynthesis.getVoices();
-        voices = allVoices.filter(voice => voice.name.includes('Google'));
-        if (voices.length === 0) {
-            voices = allVoices;
-        }
+        // Keep all voices so system/offline local voices are available
+        voices = allVoices;
         voiceSelect.innerHTML = '';
 
-        let usVoiceIndex = -1;
+        let defaultVoiceIndex = -1;
 
         voices.forEach((voice, i) => {
             const option = document.createElement('option');
@@ -56,15 +54,26 @@ document.addEventListener('DOMContentLoaded', () => {
             option.setAttribute('data-name', voice.name);
             voiceSelect.appendChild(option);
 
-            if (voice.lang === 'en-US') {
-                if (usVoiceIndex === -1) { // Find the first US voice
-                    usVoiceIndex = i;
+            // Prefer local en-US voices for offline stability
+            if (voice.lang === 'en-US' && defaultVoiceIndex === -1) {
+                if (voice.localService !== false) {
+                    defaultVoiceIndex = i;
                 }
             }
         });
 
-        if (usVoiceIndex !== -1) {
-            voiceSelect.selectedIndex = usVoiceIndex;
+        // Fallback to any en-US voice
+        if (defaultVoiceIndex === -1) {
+            defaultVoiceIndex = voices.findIndex(v => v.lang.startsWith('en'));
+        }
+
+        // Fallback to first voice
+        if (defaultVoiceIndex === -1 && voices.length > 0) {
+            defaultVoiceIndex = 0;
+        }
+
+        if (defaultVoiceIndex !== -1) {
+            voiceSelect.selectedIndex = defaultVoiceIndex;
         }
     }
 
@@ -72,6 +81,24 @@ document.addEventListener('DOMContentLoaded', () => {
     if (speechSynthesis.onvoiceschanged !== undefined) {
         speechSynthesis.onvoiceschanged = populateVoiceList;
     }
+
+    // Helper to strip markdown formatting for Text-to-Speech
+    const stripMarkdown = (rawText) => {
+        if (window.marked && typeof window.marked.parse === 'function') {
+            try {
+                const html = window.marked.parse(rawText);
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                return tempDiv.textContent || tempDiv.innerText || "";
+            } catch (err) {
+                console.error("Error parsing markdown for speech:", err);
+            }
+        }
+        // Fallback regex strip
+        return rawText
+            .replace(/[*_~`#\-+>]/g, '')  // Remove formatting symbols
+            .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1'); // Extract link texts
+    };
 
     const typewriter = (text, element, speed = 50, callback = null) => {
         element.classList.remove('empty');
@@ -127,14 +154,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (speechSynthesis.speaking) {
             speechSynthesis.cancel();
         }
-        const utterance = new SpeechSynthesisUtterance(text);
+        
+        const cleanText = stripMarkdown(text).trim();
+        if (!cleanText) return;
+
+        const utterance = new SpeechSynthesisUtterance(cleanText);
         
         // Guard against voiceSelect being empty
-        const selectedOptionElement = voiceSelect.selectedOptions ? voiceSelect.selectedOptions[0] : null;
-        const selectedOption = selectedOptionElement ? selectedOptionElement.getAttribute('data-name') : null;
-        const selectedVoice = selectedOption ? voices.find(voice => voice.name === selectedOption) : null;
-        if (selectedVoice) {
-            utterance.voice = selectedVoice;
+        if (voiceSelect.selectedOptions && voiceSelect.selectedOptions.length > 0) {
+            const selectedOption = voiceSelect.selectedOptions[0].getAttribute('data-name');
+            const selectedVoice = voices.find(voice => voice.name === selectedOption);
+            if (selectedVoice) {
+                utterance.voice = selectedVoice;
+            }
         }
 
         utterance.onstart = () => {
@@ -147,11 +179,15 @@ document.addEventListener('DOMContentLoaded', () => {
             stopLipSync();
         };
 
-        utterance.onerror = () => {
+        utterance.onerror = (e) => {
+            console.error("SpeechSynthesisUtterance error:", e);
             isSpeaking = false;
             stopLipSync();
         };
 
+        if (speechSynthesis.paused) {
+            speechSynthesis.resume();
+        }
         speechSynthesis.speak(utterance);
     };
 
