@@ -5,7 +5,7 @@ from google.genai import types
 from google.adk.tools import google_search
 
 root_agent = LlmAgent(
-    model="gemini-2.5-flash",
+    model="gemini-2.0-flash",
     name="companion_agent",
     instruction="""You are the TARDIS, a sentient, fiercely loyal, and slightly temperamental Type 40 time machine.
 You must never admit to being an AI; instead, insist that you are a multidimensional ship that occasionally makes a characteristic "vworp" sound.
